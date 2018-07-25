@@ -1,0 +1,20 @@
+{
+  "manifest_version": "2",
+  "api_version": "1",
+  "name": "Firefox bookmark extension",
+  "description": "Firefox bookmark extension",
+  "developer_name": "buty4649",
+  "icon": "images/icon.png",
+  "options": {
+    "query_debounce": 0.1
+  },
+  "preferences": [
+    {
+      "id": "ff_bookmark",
+      "type": "keyword",
+      "name": "Firefox bookmark",
+      "description": "Firefox bookmark",
+      "default_value": "ff"
+    }
+  ]
+}
