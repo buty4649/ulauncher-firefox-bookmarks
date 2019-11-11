@@ -1,6 +1,8 @@
 import os
 import sqlite3
 import configparser
+import shutil
+import tempfile
 
 from ulauncher.api.client.Extension import Extension
 from ulauncher.api.client.EventListener import EventListener
@@ -20,26 +22,25 @@ class FirefoxBookmark(Extension):
 class KeywordQueryEventListener(EventListener):
 
   MAX_ITEM_COUNT = 8
-
-  def __init__(self):
-    db_path = os.path.join(self.get_profile_path(), "places.sqlite")
-    self.db = sqlite3.connect(db_path)
-
-  def on_event(self, event, extension):
-    items = []
-    sql = """
-select distinct moz_places.id, moz_bookmarks.title, moz_places.url, moz_places.url_hash from moz_places inner join
- moz_bookmarks on moz_places.id = moz_bookmarks.fk
+  BOOKMARK_QUERY = """
+SELECT
+ distinct moz_places.id, moz_bookmarks.title, moz_places.url, moz_places.url_hash from moz_places
+ INNER JOIN moz_bookmarks ON moz_places.id = moz_bookmarks.fk
 WHERE
   moz_places.title LIKE ?
-  or 
+  OR
   moz_places.url LIKE ?
 LIMIT ?
 """
-    argument = event.get_argument().replace("%", "\\$%").replace("_", "\\$_") if event.get_argument() else ""
-    search_term = ''.join(["%", argument, "%"])
-    for row in self.db.execute(sql, [search_term, search_term, self.MAX_ITEM_COUNT]):
-      (id, title, url, hash) = row
+
+  def __init__(self):
+    self.db_path = os.path.join(self.get_profile_path(), "places.sqlite")
+
+  def on_event(self, event, extension):
+    keyword = event.get_argument()
+    items = []
+    for bookmark in self.get_bookmark_items(keyword):
+      (id, title, url, hash) = bookmark
       items.append(ExtensionResultItem(icon='images/icon.png',
                                         name=title,
                                         description=url,
@@ -48,7 +49,7 @@ LIMIT ?
     return RenderResultListAction(items)
 
   def on_close(self, event, extension):
-    self.db.close()
+    pass
 
   def get_profile_path(self):
     base_path = os.path.join(os.environ['HOME'], '.mozilla/firefox/')
@@ -58,6 +59,23 @@ LIMIT ?
     profile_path = profile.get("Profile0", "Path")
 
     return os.path.join(base_path, profile_path)
+
+  def get_bookmark_items(self, keyword):
+    if keyword is None:
+      search_keyword = "%"
+    else:
+      kw = keyword.replace("%", "\\$%").replace("_", "\\$_")
+      search_keyword = "%%%s%%" % kw
+
+    with tempfile.TemporaryDirectory() as tmp:
+      temp_db_path = os.path.join(tmp, "places.sqlite")
+      shutil.copyfile(self.db_path, temp_db_path)
+
+      db = sqlite3.connect(temp_db_path)
+      result = db.execute(self.BOOKMARK_QUERY, [search_keyword, search_keyword, self.MAX_ITEM_COUNT])
+      db.close
+
+    return result
 
 if __name__ == '__main__':
     FirefoxBookmark().run()
