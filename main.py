@@ -1,6 +1,6 @@
 import os
 import sqlite3
-import ConfigParser
+import configparser
 
 from ulauncher.api.client.Extension import Extension
 from ulauncher.api.client.EventListener import EventListener
@@ -53,7 +53,7 @@ LIMIT ?
   def get_profile_path(self):
     base_path = os.path.join(os.environ['HOME'], '.mozilla/firefox/')
 
-    profile = ConfigParser.RawConfigParser()
+    profile = configparser.ConfigParser()
     profile.read(os.path.join(base_path, "profiles.ini"))
     profile_path = profile.get("Profile0", "Path")
 
