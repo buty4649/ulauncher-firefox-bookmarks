@@ -14,6 +14,12 @@
       "name": "Firefox bookmark",
       "description": "Firefox bookmark",
       "default_value": "ff"
+    },
+    {
+      "id": "profile",
+      "type": "input",
+      "name": "Profile",
+      "description": "Enter the profile to use (use default if empty)"
     }
   ]
 }
